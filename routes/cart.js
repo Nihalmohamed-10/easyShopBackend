@@ -1,17 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const Cart = require("../models/Cart");
-const authMiddleware = require("../middleware/authMiddleware"); // ✅ Import auth middleware here
+const authMiddleware = require("../middleware/authMiddleware");
 
-// Get cart by userId
-router.get("/:userId", async (req, res) => {
-  const { userId } = req.params;
-
+// ✅ GET user's cart
+router.get("/", authMiddleware.protect, async (req, res) => {
   try {
-    const cart = await Cart.findOne({ userId }).populate("items.productId");
+    const cart = await Cart.findOne({ userId: req.user._id }).populate("items.productId");
 
     if (!cart) {
-      return res.status(404).json({ message: "Cart not found" });
+      return res.status(200).json({ products: [] });
     }
 
     const products = cart.items.map((item) => ({
@@ -30,24 +28,30 @@ router.get("/:userId", async (req, res) => {
   }
 });
 
-// Add to cart
-router.post("/add", async (req, res) => {
-  const { userId, productId, quantity } = req.body;
+// ✅ ADD product to cart
+router.post("/add", authMiddleware.protect, async (req, res) => {
+  const { productId, quantity } = req.body;
+
+  if (!productId || !quantity) {
+    return res.status(400).json({ error: "Product ID and quantity are required" });
+  }
 
   try {
-    let cart = await Cart.findOne({ userId });
+    let cart = await Cart.findOne({ userId: req.user._id });
 
     if (!cart) {
-      cart = new Cart({ userId, items: [] });
+      cart = new Cart({ userId: req.user._id, items: [] });
     }
 
-    const existingItem = cart.items.find(
+    const existingItemIndex = cart.items.findIndex(
       (item) => item.productId.toString() === productId
     );
 
-    if (existingItem) {
-      existingItem.quantity += quantity;
+    if (existingItemIndex > -1) {
+      // If item exists, update quantity
+      cart.items[existingItemIndex].quantity += quantity;
     } else {
+      // If item doesn't exist, push new item
       cart.items.push({ productId, quantity });
     }
 
@@ -59,12 +63,12 @@ router.post("/add", async (req, res) => {
   }
 });
 
-// Remove item from cart
-router.post("/remove", async (req, res) => {
-  const { userId, productId } = req.body;
+// ✅ REMOVE product from cart
+router.post("/remove", authMiddleware.protect, async (req, res) => {
+  const { productId } = req.body; // Only expect productId here
 
   try {
-    const cart = await Cart.findOne({ userId });
+    const cart = await Cart.findOne({ userId: req.user._id });
 
     if (!cart) {
       return res.status(404).json({ message: "Cart not found" });
@@ -77,17 +81,16 @@ router.post("/remove", async (req, res) => {
     await cart.save();
     res.status(200).json({ message: "Product removed from cart" });
   } catch (err) {
-    console.error("Failed to remove product:", err.message);
+    console.error("Failed to remove product from cart:", err);
     res.status(500).json({ error: "Failed to remove product from cart" });
   }
 });
 
-// ✅ Clear the cart (auth required)
+
+// ✅ CLEAR cart
 router.delete("/clear", authMiddleware.protect, async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    const cart = await Cart.findOne({ userId });
+    const cart = await Cart.findOne({ userId: req.user._id });
 
     if (!cart) {
       return res.status(404).json({ message: "Cart not found" });
@@ -96,9 +99,9 @@ router.delete("/clear", authMiddleware.protect, async (req, res) => {
     cart.items = [];
     await cart.save();
 
-    res.status(200).json({ message: "Cart cleared successfully", cart });
+    res.status(200).json({ message: "Cart cleared successfully" });
   } catch (err) {
-    console.error("Error clearing cart:", err.message);
+    console.error("Failed to clear cart:", err);
     res.status(500).json({ error: "Failed to clear cart" });
   }
 });

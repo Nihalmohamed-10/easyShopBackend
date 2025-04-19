@@ -10,18 +10,21 @@ const protect = async (req, res, next) => {
   ) {
     try {
       token = req.headers.authorization.split(" ")[1];
+
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       req.user = await User.findById(decoded.id).select("-password");
-      return next(); // success, move to the next middleware/route
+
+      if (!req.user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      next();
     } catch (error) {
-      console.error(" Token verification failed:", error.message);
+      console.error("Auth error:", error.message);
       return res.status(401).json({ message: "Not authorized, token failed" });
     }
-  }
-
-  // If no token found at all
-  if (!token) {
+  } else {
     return res.status(401).json({ message: "Not authorized, no token" });
   }
 };

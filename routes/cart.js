@@ -3,7 +3,7 @@ const router = express.Router();
 const Cart = require("../models/Cart");
 const authMiddleware = require("../middleware/authMiddleware");
 
-// ✅ GET user's cart
+//  GET user's cart
 router.get("/", authMiddleware.protect, async (req, res) => {
   try {
     const cart = await Cart.findOne({ userId: req.user._id }).populate("items.productId");
@@ -28,7 +28,7 @@ router.get("/", authMiddleware.protect, async (req, res) => {
   }
 });
 
-// ✅ ADD product to cart
+//  ADD product to cart
 router.post("/add", authMiddleware.protect, async (req, res) => {
   const { productId, quantity } = req.body;
 
@@ -48,10 +48,10 @@ router.post("/add", authMiddleware.protect, async (req, res) => {
     );
 
     if (existingItemIndex > -1) {
-      // If item exists, update quantity
+      
       cart.items[existingItemIndex].quantity += quantity;
     } else {
-      // If item doesn't exist, push new item
+
       cart.items.push({ productId, quantity });
     }
 
@@ -63,9 +63,9 @@ router.post("/add", authMiddleware.protect, async (req, res) => {
   }
 });
 
-// ✅ REMOVE product from cart
+//  REMOVE 
 router.post("/remove", authMiddleware.protect, async (req, res) => {
-  const { productId } = req.body; // Only expect productId here
+  const { productId } = req.body; 
 
   try {
     const cart = await Cart.findOne({ userId: req.user._id });
@@ -87,7 +87,7 @@ router.post("/remove", authMiddleware.protect, async (req, res) => {
 });
 
 
-// ✅ CLEAR cart
+// CLEAR cart
 router.delete("/clear", authMiddleware.protect, async (req, res) => {
   try {
     const cart = await Cart.findOne({ userId: req.user._id });

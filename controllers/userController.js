@@ -1,8 +1,7 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
-require("dotenv").config(); // ✅ Ensure environment variables are loaded
+require("dotenv").config(); 
 
-// Utility function to generate JWT token
 const generateToken = (id, role) => {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not defined in environment variables");
@@ -13,9 +12,6 @@ const generateToken = (id, role) => {
   });
 };
 
-// @desc    Register a new user
-// @route   POST /api/users/register
-// @access  Public
 const registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
 
@@ -44,9 +40,6 @@ const registerUser = async (req, res) => {
   }
 };
 
-// @desc    Authenticate user & get token
-// @route   POST /api/users/login
-// @access  Public
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -69,9 +62,7 @@ const loginUser = async (req, res) => {
   }
 };
 
-// @desc    Get user profile
-// @route   GET /api/users/profile
-// @access  Private
+
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -91,10 +82,62 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (user) {
+      user.name = req.body.name || user.name;
+      user.email = req.body.email || user.email;
+
+      if (req.body.password) {
+        user.password = req.body.password;
+      }
+
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        token: generateToken(updatedUser._id, updatedUser.role),
+      });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+const deleteUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (user) {
+      // await user.remove();
+      await User.findByIdAndDelete(req.user.id);
+      res.json({ message: "User deleted successfully" });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+
+const userLogout = async (req, res)=>{
+  res.status(200).json({message:"user logout"})
+}
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
+  userLogout,
+  updateUserProfile,
+  deleteUserProfile
 };
 
 

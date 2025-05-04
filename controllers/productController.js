@@ -12,7 +12,7 @@ const addProduct = async (req, res) => {
       category,
       stock,
       images,
-      seller: req.user.id, // seller ID from authenticated token
+      seller: req.user.id, 
     });
 
     await product.save();
@@ -23,7 +23,7 @@ const addProduct = async (req, res) => {
   }
 };
 
-// Get all products
+// Get all
 const getProducts = async (req, res) => {
   try {
     const products = await Product.find().populate("seller", "name email"); 
@@ -33,7 +33,7 @@ const getProducts = async (req, res) => {
   }
 };
 
-// Get a single product by ID
+// Get a single product 
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -70,8 +70,7 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-// Get products added by the logged-in seller
-// Get products added by the logged-in seller
+//  products added by the lseller
 const getSellerProducts = async (req, res) => {
   try {
     if (req.user.role !== "seller") {
@@ -79,8 +78,6 @@ const getSellerProducts = async (req, res) => {
     }
 
     const sellerProducts = await Product.find({ seller: req.user.id });
-
-    // Send array directly
     res.json(sellerProducts);
   } catch (error) {
     console.error("Error fetching seller products:", error.message);

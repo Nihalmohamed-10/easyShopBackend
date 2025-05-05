@@ -35,6 +35,13 @@ const orderSchema = new mongoose.Schema(
       type: String,
       default: "Pending",
     },
+    paymentId: {
+      type: String,
+    },
+    paidAt: {
+      type: Date,
+    },
+    
   },
   { timestamps: true }
 );
